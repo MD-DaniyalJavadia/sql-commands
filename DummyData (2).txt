@@ -1,0 +1,60 @@
+SET NOCOUNT ON;
+
+-- 1. Pehle valid ActCodes ki ek temporary table banate hain jo aapki list par mabni hai
+IF OBJECT_ID('tempdb..#ValidAccounts') IS NOT NULL DROP TABLE #ValidAccounts;
+CREATE TABLE #ValidAccounts (ActCode INT);
+
+INSERT INTO #ValidAccounts (ActCode)
+VALUES 
+(22241), (22352), (21925), (21551), (21552), (21800), (22058), (22060), (22112), 
+(21746), (21765), (22081), (22101), (22059), (22141), (21553), (22048), (21789), 
+(22037), (22354), (22052), (22041), (21772), (21735), (22255), (21554), (21555), 
+(21818), (21556), (22330), (21557), (21558), (21559), (21733), (21777), (21739), 
+(21560), (21561), (21761), (21841), (21832), (21936), (22001), (21963), (21897), 
+(22035), (21562), (21563), (21647), (21820), (21921), (21743), (21828), (21564), 
+(21565), (22014), (22366), (21754), (22129), (21965), (21796), (22105), (22183);
+-- (Note: Maine yahan sample IDs li hain, aap loop mein puri list use kar sakte hain)
+
+DECLARE @i INT = 1;
+DECLARE @MasterID INT;
+DECLARE @CurrentCompanyId INT;
+DECLARE @RandomAmount MONEY;
+DECLARE @RandomDebitCode INT;
+DECLARE @RandomCreditCode INT;
+
+BEGIN TRANSACTION;
+BEGIN TRY
+    WHILE @i <= 500
+    BEGIN
+        SET @CurrentCompanyId = (@i % 4) + 1; 
+
+        -- Master Entry
+        INSERT INTO [dbo].[AccountOpeningM] ([VDate], [Remarks], [BookCode], [VoucherNo], [MCode], [CompanyId], [UserID], [InputType])
+        VALUES (DATEADD(MINUTE, -@i, GETDATE()), 'Bulk Entry Co ' + CAST(@CurrentCompanyId AS VARCHAR), 100, 'V-' + CAST(@i AS VARCHAR), @i, @CurrentCompanyId, 1, 'OP');
+
+        SET @MasterID = SCOPE_IDENTITY();
+        SET @RandomAmount = CAST((ABS(CHECKSUM(NEWID())) % 50000) + 1000 AS MONEY);
+
+        -- List se random ActCode uthane ka tareeka
+        SELECT TOP 1 @RandomDebitCode = ActCode FROM #ValidAccounts ORDER BY NEWID();
+        SELECT TOP 1 @RandomCreditCode = ActCode FROM #ValidAccounts WHERE ActCode <> @RandomDebitCode ORDER BY NEWID();
+
+        -- Debit Entry
+        INSERT INTO [dbo].[AccountOpeningD] ([PersonID], [ActCode], [Debit], [Credit], [Remarks], [UserID])
+        VALUES (@MasterID, @RandomDebitCode, @RandomAmount, 0, 'Opening Debit', 1);
+
+        -- Credit Entry
+        INSERT INTO [dbo].[AccountOpeningD] ([PersonID], [ActCode], [Debit], [Credit], [Remarks], [UserID])
+        VALUES (@MasterID, @RandomCreditCode, 0, @RandomAmount, 'Opening Credit', 1);
+
+        SET @i = @i + 1;
+    END
+    COMMIT TRANSACTION;
+    PRINT '500 Balanced Vouchers with Real ActCodes inserted!';
+END TRY
+BEGIN CATCH
+    ROLLBACK TRANSACTION;
+    PRINT 'Error: ' + ERROR_MESSAGE();
+END CATCH
+
+DROP TABLE #ValidAccounts;

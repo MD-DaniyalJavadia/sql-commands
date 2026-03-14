@@ -1,0 +1,5 @@
+RESTORE DATABASE YourDatabaseName
+FROM DISK = 'C:\Backup\YourDatabaseName.bak'
+WITH MOVE 'YourDatabaseName' TO 'C:\SQLData\YourDatabaseName.mdf',
+     MOVE 'YourDatabaseName_log' TO 'C:\SQLData\YourDatabaseName_log.ldf',
+     REPLACE;

@@ -1,0 +1,107 @@
+-- JSON data ko temporary table mein store karein
+IF OBJECT_ID('tempdb..#ActCodes') IS NOT NULL DROP TABLE #ActCodes;
+
+CREATE TABLE #ActCodes (
+    ActCodeID INT,
+    ActName NVARCHAR(255)
+);
+
+INSERT INTO #ActCodes (ActCodeID, ActName)
+VALUES
+(22241, '10% STWH ON GST (PAYABLE)'),
+(22352, 'A ONE GOOD TRANSPORT'),
+(21925, 'A R YOUSUF'),
+(21551, 'A.B EXPORTS (PVT) LTD'),
+(21552, 'ABBOTT LABORATORIES (PAKISTAN) LTD.'),
+(21800, 'ABDUL BASIT'),
+(22058, 'ABDUL GHAFOOR'),
+(22060, 'ABDUL GHANI'),
+(22112, 'ABDUL JALEEL'),
+(21746, 'ABDUL LATEEF'),
+(21765, 'ABDUL QAYYUM'),
+(22081, 'ABDUL RASHEED'),
+(22101, 'ABDUL REHMAN'),
+(22059, 'ABDUL WAHID'),
+(22141, 'ABDULLAH'),
+(21553, 'ABDUR RAHMAN CORP. (PVT) LTD'),
+(22048, 'ABIHA ENTERPRISES'),
+(21789, 'ABRAR ABDUL GHAFFAR'),
+(22037, 'ACE FISHERIES');
+
+-- Cursor, Variables, aur Loop ko 200 Master Entries ke liye set karein
+DECLARE @i INT = 1;
+DECLARE @MCodeValue INT = 1;
+DECLARE @CurrentDate DATETIME = GETDATE();
+DECLARE @NewMasterID INT;
+-- @VoucherPrefix iski ab zaroorat nahi hai, kyunki Voucher Computed Column hai.
+-- DECLARE @VoucherPrefix NVARCHAR(50) = 'OP-' + FORMAT(@CurrentDate, 'yyyyMMdd') + '-'; 
+DECLARE @ActCode1 INT, @ActCode2 INT;
+
+-- ActCode IDs ko ek Array mein Load karein
+DECLARE @ActCodeList TABLE (ID INT IDENTITY(1,1), ActCode INT);
+INSERT INTO @ActCodeList (ActCode) SELECT ActCodeID FROM #ActCodes WHERE ActCodeID <> 0;
+DECLARE @MaxActCodeIndex INT = (SELECT COUNT(*) FROM @ActCodeList);
+
+WHILE @i <= 200
+BEGIN
+    -- 1. AccountOpeningM mein Entry
+    -- !!! Voucher column ko hata diya gaya hai !!!
+    INSERT INTO AccountOpeningM (VDate, Remarks, BookCode, VoucherNo, MCode, CompanyID, CurrentDate, InputType, UserID)
+    VALUES (
+        @CurrentDate, 
+        'System Generated Entry ' + CAST(@i AS NVARCHAR(10)), 
+        NULL, 
+        NULL, 
+        @MCodeValue,  -- MCode 1 se shuru hokar +1 hota jayega
+        1,             -- CompanyID 1
+        @CurrentDate, 
+        'OP', 
+        NULL 
+    );
+
+    -- Master Entry ki ID prapt karein
+    SET @NewMasterID = SCOPE_IDENTITY();
+
+    -- ActCodes Sequentially/Randomly chunein
+    SELECT @ActCode1 = ActCode FROM @ActCodeList WHERE ID = ((@i - 1) * 2 % @MaxActCodeIndex) + 1;
+    SELECT @ActCode2 = ActCode FROM @ActCodeList WHERE ID = ((@i - 1) * 2 + 1) % @MaxActCodeIndex + 1;
+
+    -- 2. AccountOpeningD mein pehli Entry (Debit)
+    INSERT INTO AccountOpeningD (PersonID, Debit, Credit, ChkDate, ActCode, Remarks, Cheque, CreateDate, UserID)
+    VALUES (
+        @NewMasterID,  -- PersonID Master Entry ki ID hogi
+        (RAND() * 10000) + 100, -- Random Debit Value
+        NULL,          -- Credit NULL
+        NULL, 
+        @ActCode1,     -- ActCode JSON Data se
+        'Debit Entry for MCode ' + CAST(@MCodeValue AS NVARCHAR(10)), 
+        NULL, 
+        @CurrentDate, 
+        NULL
+    );
+
+    -- 3. AccountOpeningD mein doosri Entry (Credit)
+    INSERT INTO AccountOpeningD (PersonID, Debit, Credit, ChkDate, ActCode, Remarks, Cheque, CreateDate, UserID)
+    VALUES (
+        @NewMasterID,  -- PersonID Master Entry ki ID hogi
+        NULL,          -- Debit NULL
+        (RAND() * 10000) + 100, -- Random Credit Value
+        NULL, 
+        @ActCode2,     -- ActCode JSON Data se
+        'Credit Entry for MCode ' + CAST(@MCodeValue AS NVARCHAR(10)), 
+        NULL, 
+        @CurrentDate, 
+        NULL
+    );
+
+    -- Counters ko Update karein
+    SET @i = @i + 1;
+    SET @MCodeValue = @MCodeValue + 1;
+END
+
+-- Temporary table ko hata dein
+DROP TABLE #ActCodes;
+
+-- Verification Queries (Optional)
+SELECT 'Total AccountOpeningM Entries: ' + CAST(COUNT(*) AS NVARCHAR(10)) FROM AccountOpeningM WHERE MCode >= 1 AND MCode < @MCodeValue;
+SELECT 'Total AccountOpeningD Entries: ' + CAST(COUNT(*) AS NVARCHAR(10)) FROM AccountOpeningD WHERE PersonID IN (SELECT Id FROM AccountOpeningM WHERE MCode >= 1 AND MCode < @MCodeValue);

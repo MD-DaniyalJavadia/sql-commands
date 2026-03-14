@@ -1,0 +1,71 @@
+SET NOCOUNT ON;
+
+-- 1. Valid ActCodes ki temporary table
+IF OBJECT_ID('tempdb..#ValidAccounts') IS NOT NULL DROP TABLE #ValidAccounts;
+CREATE TABLE #ValidAccounts (ActCode INT);
+
+INSERT INTO #ValidAccounts (ActCode)
+VALUES (22241), (22352), (21925), (21551), (21552), (21800), (22058), (22060), (22112), (21746), (21765), (22081);
+
+DECLARE @i INT = 1;
+DECLARE @MasterID INT;
+DECLARE @CurrentCompanyId INT;
+DECLARE @NewMCode INT;
+DECLARE @RandomAmount MONEY;
+DECLARE @RandomActCode INT;
+DECLARE @IsDebit BIT;
+DECLARE @RandomDate DATETIME;
+
+BEGIN TRANSACTION;
+BEGIN TRY
+    WHILE @i <= 25
+    BEGIN
+        -- Company ID cycle 1, 2, 3, 4
+        SET @CurrentCompanyId = (@i % 4) + 1; 
+
+        -- 1. Company-wise MCode counting
+        SELECT @NewMCode = ISNULL(MAX(MCode), 0) + 1 
+        FROM [dbo].[AccountOpeningM] 
+        WHERE CompanyId = @CurrentCompanyId;
+
+        -- 2. Random Date Logic: Aaj se 180 din (6 mahine) pehle tak
+        -- Formula: Aaj ki date minus (0 se 180 ke darmiyan koi random number)
+        SET @RandomDate = DATEADD(DAY, -(ABS(CHECKSUM(NEWID())) % 180), GETDATE());
+
+        -- Master Entry
+        INSERT INTO [dbo].[AccountOpeningM] ([VDate], [Remarks], [BookCode], [VoucherNo], [MCode], [CompanyId], [UserID], [InputType])
+        VALUES (@RandomDate, 'Bulk Opening Co ' + CAST(@CurrentCompanyId AS VARCHAR), 100, 'V-' + CAST(@NewMCode AS VARCHAR), @NewMCode, @CurrentCompanyId, 1, 'OP');
+
+        SET @MasterID = SCOPE_IDENTITY();
+        SET @RandomAmount = CAST((ABS(CHECKSUM(NEWID())) % 50000) + 1000 AS MONEY);
+        
+        -- Randomly decide if this row is Debit or Credit
+        SET @IsDebit = CASE WHEN ABS(CHECKSUM(NEWID())) % 2 = 0 THEN 1 ELSE 0 END;
+
+        -- List se random ActCode uthana
+        SELECT TOP 1 @RandomActCode = ActCode FROM #ValidAccounts ORDER BY NEWID();
+
+        -- Detail Entry (Single side entry)
+        INSERT INTO [dbo].[AccountOpeningD] ([PersonID], [ActCode], [Debit], [Credit], [Remarks], [UserID], [CreateDate])
+        VALUES (
+            @MasterID, 
+            @RandomActCode, 
+            CASE WHEN @IsDebit = 1 THEN @RandomAmount ELSE 0 END, 
+            CASE WHEN @IsDebit = 0 THEN @RandomAmount ELSE 0 END, 
+            'Random Entry ' + CAST(@i AS VARCHAR), 
+            1,
+            @RandomDate -- Detail date bhi master ke mutabiq
+        );
+
+        SET @i = @i + 1;
+    END
+    
+    COMMIT TRANSACTION;
+    PRINT '25 Entries inserted! Dates are spread over the last 6 months.';
+END TRY
+BEGIN CATCH
+    ROLLBACK TRANSACTION;
+    PRINT 'Error: ' + ERROR_MESSAGE();
+END CATCH
+
+DROP TABLE #ValidAccounts;

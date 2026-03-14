@@ -1,0 +1,48 @@
+DECLARE @TableName NVARCHAR(255);
+DECLARE @SQL NVARCHAR(MAX);
+
+-- Cursor for missing tables
+DECLARE MissingTables CURSOR FOR
+SELECT t2.name
+FROM GRT25.sys.tables t2
+LEFT JOIN MadBook.sys.tables t1 ON t1.name = t2.name
+WHERE t1.name IS NULL;
+
+OPEN MissingTables;
+FETCH NEXT FROM MissingTables INTO @TableName;
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+    SET @SQL = 'CREATE TABLE ' + QUOTENAME(@TableName) + ' (';
+
+    -- Column definitions
+    DECLARE @Columns NVARCHAR(MAX) = '';
+    SELECT @Columns = @Columns + 
+        CHAR(13) + '    ' + QUOTENAME(COLUMN_NAME) + ' ' +
+        CASE 
+            WHEN DATA_TYPE IN ('text') THEN 'varchar(MAX)'
+            WHEN DATA_TYPE IN ('ntext') THEN 'nvarchar(MAX)'
+            WHEN DATA_TYPE IN ('image') THEN 'varbinary(MAX)'
+            WHEN DATA_TYPE IN ('varchar','nvarchar','varbinary') AND CHARACTER_MAXIMUM_LENGTH = -1 THEN DATA_TYPE + '(MAX)'
+            WHEN DATA_TYPE IN ('varchar','nvarchar','varbinary') THEN DATA_TYPE + '(' + CAST(CHARACTER_MAXIMUM_LENGTH AS VARCHAR(20)) + ')'
+            ELSE DATA_TYPE
+        END +
+        CASE WHEN IS_NULLABLE = 'NO' THEN ' NOT NULL' ELSE ' NULL' END + ','
+
+    FROM GRT25.INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = @TableName
+    ORDER BY ORDINAL_POSITION;
+
+    -- Remove last comma
+    SET @Columns = LEFT(@Columns, LEN(@Columns)-1);
+
+    -- Final CREATE TABLE statement
+    SET @SQL = @SQL + CHAR(13) + @Columns + CHAR(13) + ');';
+
+    PRINT @SQL;
+
+    FETCH NEXT FROM MissingTables INTO @TableName;
+END
+
+CLOSE MissingTables;
+DEALLOCATE MissingTables;

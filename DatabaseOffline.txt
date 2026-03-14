@@ -1,0 +1,4 @@
+-- Database ko offline karna
+ALTER DATABASE YourDatabaseName
+SET OFFLINE
+WITH ROLLBACK IMMEDIATE;

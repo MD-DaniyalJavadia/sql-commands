@@ -1,0 +1,6 @@
+USE master;
+GO
+CREATE DATABASE YourDatabaseName
+ON (FILENAME = 'C:\Path\YourDatabaseName.mdf'),
+   (FILENAME = 'C:\Path\YourDatabaseName_log.ldf')
+FOR ATTACH;

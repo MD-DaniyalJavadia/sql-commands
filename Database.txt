@@ -1,0 +1,4 @@
+-- Database detach karna
+USE master;
+GO
+EXEC sp_detach_db @dbname = 'YourDatabaseName';

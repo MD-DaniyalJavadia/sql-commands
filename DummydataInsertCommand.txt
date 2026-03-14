@@ -1,0 +1,52 @@
+--SET NOCOUNT ON;
+
+--DECLARE @i INT = 1;
+--DECLARE @MasterID INT;
+--DECLARE @CurrentCompanyId INT;
+--DECLARE @RandomAmount MONEY;
+
+---- 500 Master Records ka loop
+--WHILE @i <= 500
+--BEGIN
+--    -- Company ID ko 1, 2, 3, 4 mein rotate karne ke liye logic
+--    SET @CurrentCompanyId = (@i % 4) + 1; 
+
+--    -- 1. Master Table Entry
+--    INSERT INTO [dbo].[AccountOpeningM] (
+--        [VDate], [Remarks], [BookCode], [VoucherNo], [MCode], [CompanyId], [UserID], [InputType]
+--    )
+--    VALUES (
+--        DATEADD(MINUTE, -@i, GETDATE()), 
+--        'Bulk Entry for Company ' + CAST(@CurrentCompanyId AS VARCHAR),
+--        100,
+--        'V-' + CAST(@i AS VARCHAR),
+--        @i, 
+--        @CurrentCompanyId, -- Yahan 1, 2, 3, ya 4 jayega
+--        1,  
+--        'OP'
+--    );
+
+--    SET @MasterID = SCOPE_IDENTITY();
+
+--    -- 2. Balanced Detail Entries (Ek Debit, Ek Credit taake Voucher balance rahe)
+--    SET @RandomAmount = CAST((ABS(CHECKSUM(NEWID())) % 50000) + 1000 AS MONEY);
+
+--    -- Debit Row (Example: Using Cash ID 20823)
+--    INSERT INTO [dbo].[AccountOpeningD] ([PersonID], [ActCode], [Debit], [Credit], [Remarks], [UserID])
+--    VALUES (@MasterID, 20823, @RandomAmount, 0, 'Opening Debit', 1);
+
+--    -- Credit Row (Example: Using a Vendor/Party ID 21562)
+--    INSERT INTO [dbo].[AccountOpeningD] ([PersonID], [ActCode], [Debit], [Credit], [Remarks], [UserID])
+--    VALUES (@MasterID, 21562, 0, @RandomAmount, 'Opening Credit', 1);
+
+--    SET @i = @i + 1;
+--END
+
+--PRINT '500 Balanced Vouchers with Company IDs (1-4) inserted successfully!';
+use webapp
+SELECT 
+    CompanyId, 
+    COUNT(Id) AS TotalVouchers,
+    SUM(CASE WHEN InputType = 'OP' THEN 1 ELSE 0 END) AS OpeningVouchers
+FROM [dbo].[AccountOpeningM]
+GROUP BY CompanyId;

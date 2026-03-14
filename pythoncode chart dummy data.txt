@@ -1,0 +1,23 @@
+import random
+
+# Headers
+header = "Name\tDescript\tName2\tNatureId\tGroupId\tTypeId\tNatureName\tTypeName\tAddress\tPhone\tFax\tEmail\tNtnno\tGstno\tUserId\tWhperc\tSpersonId"
+print(header)
+
+names_pool = ["Ahmer", "Rafay", "Ilyan", "Faiz", "Fahad", "Daniyal", "Zubair", "Hamza", "Bilal", "Sami"]
+tags_pool = [":TSS", ": Daraz", " Javadia"]
+
+for i in range(1, 2501):
+    base = random.choice(names_pool)
+    tag = random.choice(tags_pool)
+    full_name = f"{base}_{i}{tag}"
+    
+    nature = random.choice(["Cash", "Bank", "Accounts Receivable"])
+    group = "ACCOUNT PAYABLE" if nature in ["Cash", "Bank"] else "ACCOUNTS RECEIVABLE SIND"
+    address = random.choice(["Garden West", "M.A Jinnah R"])
+    phone = random.randint(1000000, 9999999)
+    email = f"user{i}@email.com"
+    
+    # \t use kiya hai taaki Excel mein columns sahi banein
+    row = f"{full_name}\t{full_name}\t\t{nature}\t{group}\tSubsidiary\t\t\t{address}\t{phone}\t\t{email}\t\t\t\t\t"
+    print(row)

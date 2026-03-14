@@ -1,0 +1,2 @@
+BACKUP LOG YourDatabaseName
+TO DISK = 'C:\Backup\YourDatabaseName_log.trn';

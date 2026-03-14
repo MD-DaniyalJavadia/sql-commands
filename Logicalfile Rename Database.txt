@@ -1,0 +1,10 @@
+USE YourDatabaseName;
+GO
+SELECT name AS LogicalName, type_desc AS FileType, physical_name AS PhysicalName
+FROM sys.database_files;
+
+ALTER DATABASE YourDatabaseName
+MODIFY FILE (NAME = YourDB_Data, NEWNAME = NewDataLogicalName);
+
+ALTER DATABASE YourDatabaseName
+MODIFY FILE (NAME = YourDB_Log, NEWNAME = NewLogLogicalName);

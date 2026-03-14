@@ -1,0 +1,6 @@
+RESTORE FILELISTONLY
+FROM DISK = 'F:\TestWeb\Data\TestWebApp.bak';
+
+
+RESTORE HEADERONLY
+FROM DISK = 'F:\TestWeb\Data\TestWebApp.bak';

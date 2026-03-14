@@ -1,0 +1,10 @@
+SELECT
+    DB_NAME(database_id) AS DatabaseName,
+    name AS LogicalName,
+    physical_name AS FilePath,
+    type_desc AS FileType,
+    CAST((size * 8.0) / 1024 AS DECIMAL(8, 2)) AS SizeMB
+FROM
+    sys.master_files
+ORDER BY
+    DatabaseName, FileType;

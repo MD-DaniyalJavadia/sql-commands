@@ -1,0 +1,64 @@
+-- ==========================================
+-- STEP 0: Backup Reminder
+-- ==========================================
+PRINT '!!! Make sure you have a copy of MDF/LDF files before running this script !!!';
+
+-- ==========================================
+-- STEP 1: Set Database to EMERGENCY mode
+-- ==========================================
+ALTER DATABASE [YourDatabaseName] SET EMERGENCY;
+GO
+
+-- ==========================================
+-- STEP 2: Check current database file locations
+-- ==========================================
+EXEC sp_helpfile;
+GO
+
+-- ==========================================
+-- STEP 3: Update file paths if moved
+-- Replace 'LogicalDataFileName' and 'LogicalLogFileName' with sp_helpfile output names
+-- Replace 'N:\NewPath\...' with your actual new paths
+-- ==========================================
+ALTER DATABASE [YourDatabaseName]
+MODIFY FILE (NAME = 'LogicalDataFileName', FILENAME = 'N:\NewPath\YourDatabaseName.mdf');
+GO
+
+ALTER DATABASE [YourDatabaseName]
+MODIFY FILE (NAME = 'LogicalLogFileName', FILENAME = 'N:\NewPath\YourDatabaseName_log.ldf');
+GO
+
+-- ==========================================
+-- STEP 4: Bring database ONLINE after path change
+-- ==========================================
+ALTER DATABASE [YourDatabaseName] SET ONLINE;
+GO
+
+-- ==========================================
+-- STEP 5: Check database consistency
+-- ==========================================
+DBCC CHECKDB ('YourDatabaseName');
+GO
+
+-- ==========================================
+-- STEP 6: If minor corruption exists, repair
+-- ==========================================
+ALTER DATABASE [YourDatabaseName] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+GO
+
+DBCC CHECKDB ('YourDatabaseName', REPAIR_ALLOW_DATA_LOSS);
+GO
+
+-- ==========================================
+-- STEP 7: Set database back to MULTI_USER
+-- ==========================================
+ALTER DATABASE [YourDatabaseName] SET MULTI_USER;
+GO
+
+-- ==========================================
+-- STEP 8: Final Status Check
+-- ==========================================
+SELECT name, state_desc FROM sys.databases WHERE name = 'YourDatabaseName';
+GO
+
+PRINT 'Database recovery script completed. Verify your data carefully.';

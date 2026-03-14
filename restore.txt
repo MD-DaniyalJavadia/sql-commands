@@ -1,0 +1,15 @@
+USE master;
+GO
+
+-- Agar database already exist karta hai, usko replace karna hoga
+ALTER DATABASE YourDatabaseName
+SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+
+RESTORE DATABASE YourDatabaseName
+FROM DISK = 'C:\Backup\YourDatabaseName.bak'
+WITH REPLACE,
+     MOVE 'YourDatabaseName' TO 'C:\SQLData\YourDatabaseName.mdf',
+     MOVE 'YourDatabaseName_log' TO 'C:\SQLData\YourDatabaseName_log.ldf';
+
+ALTER DATABASE YourDatabaseName
+SET MULTI_USER;

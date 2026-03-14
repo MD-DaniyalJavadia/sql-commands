@@ -1,0 +1,6 @@
+-- Compare tables between Database1 and Database2
+SELECT t2.name AS TableName
+FROM Data1.sys.tables t2
+LEFT JOIN Data2       .sys.tables t1
+    ON t1.name = t2.name
+WHERE t1.name IS NULL;

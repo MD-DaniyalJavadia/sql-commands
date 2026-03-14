@@ -1,0 +1,18 @@
+-- Step 1: Check database status
+SELECT name, state_desc FROM sys.databases;
+
+-- Step 2: Set emergency mode
+ALTER DATABASE YourDatabaseName
+SET EMERGENCY;
+
+-- Step 3: Check for consistency
+DBCC CHECKDB ('YourDatabaseName');
+
+-- Step 4: Repair (agar minor corruption hai)
+ALTER DATABASE YourDatabaseName
+SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DBCC CHECKDB ('YourDatabaseName', REPAIR_ALLOW_DATA_LOSS);
+
+-- Step 5: Wapas multi-user mode
+ALTER DATABASE YourDatabaseName
+SET MULTI_USER;

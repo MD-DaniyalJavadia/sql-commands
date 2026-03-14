@@ -1,0 +1,2 @@
+DBCC SHRINKDATABASE(YourDatabaseName);
+DBCC SHRINKFILE('YourDatabaseName_log', 1);  -- size in MB

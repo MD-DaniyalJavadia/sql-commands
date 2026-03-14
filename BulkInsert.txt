@@ -1,0 +1,22 @@
+
+DROP TABLE IF EXISTS MyData;
+
+CREATE TABLE MyData (
+    Id INT,
+    Name2 NVARCHAR(100),
+    Description NVARCHAR(255)
+);
+
+
+--Sql2012 And Sql2022 Support Command
+BULK INSERT MyData
+FROM 'D:\Book1.csv'
+WITH (
+    FIRSTROW = 2,
+    FIELDTERMINATOR = ',',
+    ROWTERMINATOR = '0x0a',
+    TABLOCK
+);
+
+
+select * from myData

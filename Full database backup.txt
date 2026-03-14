@@ -1,0 +1,4 @@
+-- Full database backup
+BACKUP DATABASE YourDatabaseName
+TO DISK = 'C:\Backup\YourDatabaseName.bak'
+WITH FORMAT, INIT, NAME = 'Full Backup of YourDatabaseName';
