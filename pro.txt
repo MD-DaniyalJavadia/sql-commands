@@ -1,0 +1,60 @@
+1. System & Information
+systeminfo
+hostname
+ver
+wmic cpu get name
+wmic diskdrive list brief
+wmic os get caption
+2. Directory & File Management
+mkdir foldername
+rmdir foldername /s /q
+del filename.txt
+copy file1.txt file2.txt
+move file.txt D:\path\
+rename oldname.txt newname.txt
+attrib +h +s file.txt
+3. Navigation (Move Between Folders)
+cd ..
+cd \
+cd D:\sql commands
+dir /a
+dir /s
+
+4. File Creation / Editing
+type nul > file.txt
+echo Hello World > file.txt
+echo New Line >> file.txt
+notepad file.txt
+
+5. Network Commands
+ipconfig
+ipconfig /all
+ping google.com
+tracert google.com
+netstat -ano
+nslookup google.com
+
+6. Network Sharing & Users
+net user
+net user username password /add
+net user username /delete
+net share
+net use X: \\server\folder
+
+7. Task & Process Control
+tasklist
+taskkill /IM chrome.exe /F
+taskkill /PID 1234 /F
+
+8. System Control
+shutdown /s /t 0
+shutdown /r /t 0
+shutdown /a
+
+9. File Explorer Commands
+explorer
+explorer .
+explorer ..
+explorer "D:\sql commands"
+
+
